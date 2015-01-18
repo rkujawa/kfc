@@ -41,7 +41,7 @@ int main (int argc, char *argv[])
 	}
 
 	win = SDL_CreateWindow("KFC!", 100, 100, SCREEN_WIDTH, 
-	    SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);	
+	    SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);	
 	if (win == NULL) {
 		logErrorSDL("SDL_CreateWindow Error");
 		SDL_Quit();
