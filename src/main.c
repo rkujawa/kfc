@@ -62,6 +62,8 @@ int main (int argc, char *argv[])
 		return 1;
 	}
 
+	SDL_ShowCursor(SDL_DISABLE);
+
 	kfcInitSound();
 
 	c = kfcRandomLetter();
