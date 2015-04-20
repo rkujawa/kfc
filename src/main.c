@@ -11,6 +11,10 @@
 
 #define LETTERS 26
 
+#define ASCII_CAPITAL_A 0x41
+#define ASCII_CAPITAL_Z 0x5A
+#define ASCII_TO_CAPITAL 0x20
+
 bool kfcTextToTex(const char *, SDL_Texture **, SDL_Color, int);
 void kfcRenderChar(const char);
 void kfcRenderTex(SDL_Texture *, int, int);
@@ -66,7 +70,7 @@ int main (int argc, char *argv[])
 
 	kfcInitSound();
 
-	c = kfcRandomLetter();
+	c = ASCII_CAPITAL_A;
 
 	while (1) {
 		SDL_Event e;
@@ -85,10 +89,13 @@ int main (int argc, char *argv[])
 					break;
 
 				printf("%d\n", e.key.keysym.sym) ;
-				if (e.key.keysym.sym == c) { 
+				if (e.key.keysym.sym-ASCII_TO_CAPITAL == c) { 
 					Mix_PlayMusic(v_bravo, 1);
 					SDL_Delay(2000);
-					c = kfcRandomLetter();
+					if (c < ASCII_CAPITAL_Z)
+						c++;
+					else
+						c = ASCII_CAPITAL_A;
 
 					SDL_RenderClear(ren);
 					kfcRenderChar(c);
@@ -96,7 +103,7 @@ int main (int argc, char *argv[])
 
 					Mix_PlayMusic(v_find, 1);
 					SDL_Delay(3000);
-					Mix_PlayMusic(v_alpha[c-97], 1);
+					Mix_PlayMusic(v_alpha[c-ASCII_CAPITAL_A], 1);
 				}
 			}
 		}
@@ -129,7 +136,6 @@ bool kfcInitSound(void)
 
 	for (i = 0; i < LETTERS; i++) {
 		snprintf(pathbuf, PATH_MAX-1, "audio/%c.mp3", i+97);
-		//printf("pathbuf: %s\n", pathbuf);
 		v_alpha[i] = Mix_LoadMUS(pathbuf);
 	}
 
@@ -148,7 +154,7 @@ void kfcRenderChar(const char c)
 	int iW, iH, x, y;
 
 	char charBuf[2];
-	charBuf[0] = c - 32;	
+	charBuf[0] = c;	
 	charBuf[1] = '\0';
 
 	if (!kfcTextToTex(charBuf, &txttex, white, 300))
@@ -204,26 +210,5 @@ void kfcRenderTex(SDL_Texture *tex, int x, int y)
 	dst.y = y;
 	SDL_QueryTexture(tex, NULL, NULL, &dst.w, &dst.h);
 	SDL_RenderCopy(ren, tex, NULL, &dst);
-}
-
-/*
- * Idea stolen from Ryan Reich: 
- * http://stackoverflow.com/questions/2509679/how-to-generate-a-random-number-from-within-a-range
- */
-char kfcRandomLetter(void) 
-{
-	unsigned long max = 'z' - 'a';
-	unsigned long num_bins = (unsigned long) max + 1;
-	unsigned long num_rand = (unsigned long) RAND_MAX + 1;
-	unsigned long bin_size = num_rand / num_bins;
-	unsigned long defect = num_rand % num_bins;
-
-	long x;
-	do {
-		x = random();
-	}
-	while (num_rand - defect <= (unsigned long)x);
-
-	return x/bin_size + 'a';
 }
 
