@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
+
 #include <sys/syslimits.h>
 
 #define SCREEN_WIDTH 1440
@@ -34,6 +36,8 @@ static SDL_Renderer *ren;
 static Mix_Music *v_bravo;
 static Mix_Music *v_find;
 static Mix_Music *v_alpha[LETTERS];
+
+const static bool sound_enable = true;
 
 int main (int argc, char *argv[]) 
 {
@@ -68,7 +72,8 @@ int main (int argc, char *argv[])
 
 	SDL_ShowCursor(SDL_DISABLE);
 
-	kfcInitSound();
+	if (sound_enable)
+		kfcInitSound();
 
 	c = ASCII_CAPITAL_A;
 
@@ -90,8 +95,10 @@ int main (int argc, char *argv[])
 
 				printf("%d\n", e.key.keysym.sym) ;
 				if (e.key.keysym.sym-ASCII_TO_CAPITAL == c) { 
-					Mix_PlayMusic(v_bravo, 1);
-					SDL_Delay(2000);
+					if (sound_enable) {
+						Mix_PlayMusic(v_bravo, 1);
+						SDL_Delay(2000);
+					}
 					if (c < ASCII_CAPITAL_Z)
 						c++;
 					else
@@ -101,9 +108,11 @@ int main (int argc, char *argv[])
 					kfcRenderChar(c);
 					SDL_RenderPresent(ren);
 
-					Mix_PlayMusic(v_find, 1);
-					SDL_Delay(3000);
-					Mix_PlayMusic(v_alpha[c-ASCII_CAPITAL_A], 1);
+					if (sound_enable) {
+						Mix_PlayMusic(v_find, 1);
+						SDL_Delay(3000);
+						Mix_PlayMusic(v_alpha[c-ASCII_CAPITAL_A], 1);
+					}
 				}
 			}
 		}
@@ -112,7 +121,8 @@ int main (int argc, char *argv[])
 	TTF_Quit();	
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
-	kfcQuitSound();
+	if (sound_enable)
+		kfcQuitSound();
 	SDL_Quit();
 
 	return 0;
