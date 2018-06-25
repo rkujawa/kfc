@@ -2,20 +2,28 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <sys/syslimits.h>
+
+#include <gc/gc.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
 
-#include <sys/syslimits.h>
-
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
 
-#define LETTERS 26
+#define ALPHA_LETTERS 26
 
 #define ASCII_CAPITAL_A 0x41
 #define ASCII_CAPITAL_Z 0x5A
 #define ASCII_TO_CAPITAL 0x20
+
+struct kfcCharSet {
+	char *buf;	/* array with letters */
+	uint8_t num;	/* number of elements in array */
+	/* XXX: format: ASCII */
+};
 
 bool kfcTextToTex(const char *, SDL_Texture **, SDL_Color, int);
 void kfcRenderChar(const char);
@@ -24,6 +32,8 @@ char kfcRandomLetter(void);
 bool kfcInitSound(void);
 void kfcQuitSound(void);
 void logErrorSDL(const char *);
+char* kfcGetAlphabetCharSet(void);
+struct kfcCharSet kfcGetCharSet(void);
 
 static const char *fontname = "/Library/Fonts/Arial Black.ttf";
 static const char *vf_bravo = "audio/bravo.mp3";
@@ -35,13 +45,14 @@ static SDL_Renderer *ren;
 
 static Mix_Music *v_bravo;
 static Mix_Music *v_find;
-static Mix_Music *v_alpha[LETTERS];
+static Mix_Music *v_alpha[ALPHA_LETTERS];
 
 const static bool sound_enable = true;
 
 int main (int argc, char *argv[]) 
 {
-	char c;
+	struct kfcCharSet cs;
+	char *c;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
 		logErrorSDL("SDL_Init Error");
@@ -50,6 +61,7 @@ int main (int argc, char *argv[])
 
 	win = SDL_CreateWindow("KFC!", 100, 100, SCREEN_WIDTH, 
 	    SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);	
+/*	    SCREEN_HEIGHT, SDL_WINDOW_SHOWN);	 */
 	if (win == NULL) {
 		logErrorSDL("SDL_CreateWindow Error");
 		SDL_Quit();
@@ -75,13 +87,14 @@ int main (int argc, char *argv[])
 	if (sound_enable)
 		kfcInitSound();
 
-	c = ASCII_CAPITAL_A;
+	cs = kfcGetCharSet();
+	c = cs.buf;
 
 	while (1) {
 		SDL_Event e;
 
 		SDL_RenderClear(ren);
-		kfcRenderChar(c);
+		kfcRenderChar(*c);
 		SDL_RenderPresent(ren);
 
 		if (SDL_PollEvent(&e)) {
@@ -94,24 +107,25 @@ int main (int argc, char *argv[])
 					break;
 
 				printf("%d\n", e.key.keysym.sym) ;
-				if (e.key.keysym.sym-ASCII_TO_CAPITAL == c) { 
+				if (e.key.keysym.sym-ASCII_TO_CAPITAL == *c) { 
 					if (sound_enable) {
 						Mix_PlayMusic(v_bravo, 1);
 						SDL_Delay(2000);
 					}
-					if (c < ASCII_CAPITAL_Z)
+
+					if (c < (cs.buf+cs.num))
 						c++;
 					else
-						c = ASCII_CAPITAL_A;
+						c = cs.buf;
 
 					SDL_RenderClear(ren);
-					kfcRenderChar(c);
+					kfcRenderChar(*c);
 					SDL_RenderPresent(ren);
 
 					if (sound_enable) {
 						Mix_PlayMusic(v_find, 1);
 						SDL_Delay(3000);
-						Mix_PlayMusic(v_alpha[c-ASCII_CAPITAL_A], 1);
+						Mix_PlayMusic(v_alpha[(*c)-ASCII_CAPITAL_A], 1);
 					}
 				}
 			}
@@ -144,12 +158,39 @@ bool kfcInitSound(void)
 	v_find = Mix_LoadMUS(vf_find);
 	v_bravo = Mix_LoadMUS(vf_bravo);
 
-	for (i = 0; i < LETTERS; i++) {
+	for (i = 0; i < ALPHA_LETTERS; i++) {
 		snprintf(pathbuf, PATH_MAX-1, "audio/%c.mp3", i+97);
 		v_alpha[i] = Mix_LoadMUS(pathbuf);
 	}
 
 	return true;
+}
+
+struct kfcCharSet kfcGetCharSet(void)
+{
+	struct kfcCharSet cs;
+
+	cs.buf = kfcGetAlphabetCharSet();
+	cs.num = ASCII_CAPITAL_Z - ASCII_CAPITAL_A;
+
+	return cs;
+}
+
+char* kfcGetAlphabetCharSet(void)
+{
+	char *buf;
+	uint8_t i;
+	uint8_t len;
+
+	len = ASCII_CAPITAL_Z - ASCII_CAPITAL_A + 1;
+	buf = GC_MALLOC(len);
+
+	memset(buf, 0, len);
+
+	for (i = 0; i < len; i++)
+		buf[i] = i + ASCII_CAPITAL_A;
+
+	return buf;
 }
 
 void kfcQuitSound(void)

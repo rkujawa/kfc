@@ -1,6 +1,6 @@
 CC=cc
-SDL_LIB = -L/opt/local/lib -lSDL2 -lSDL2_ttf -lSDL2_mixer
-SDL_INCLUDE = -I/opt/local/include
+SDL_LIB = -L/opt/local/lib -lSDL2 -lSDL2_ttf -lSDL2_mixer -lgc
+SDL_INCLUDE = -I/opt/local/include/
 LDFLAGS = $(SDL_LIB)
 
 all: single-letter 
